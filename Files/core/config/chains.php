@@ -1,0 +1,54 @@
+<?php
+
+return [
+    'default_asset' => env('CHAIN_DEFAULT_ASSET', 'USDT'),
+    'signer' => [
+        'enabled' => (bool) env('CHAIN_SIGNER_ENABLED', false),
+        'url' => env('CHAIN_SIGNER_URL'),
+        'token' => env('CHAIN_SIGNER_TOKEN'),
+        'timeout' => (int) env('CHAIN_SIGNER_TIMEOUT', 20),
+    ],
+    'confirmations' => [
+        'tron' => (int) env('TRON_REQUIRED_CONFIRMATIONS', 19),
+        'eth' => (int) env('ETH_REQUIRED_CONFIRMATIONS', 12),
+        'bsc' => (int) env('BSC_REQUIRED_CONFIRMATIONS', 15),
+        'ton' => (int) env('TON_REQUIRED_CONFIRMATIONS', 1),
+    ],
+    'tron' => [
+        'enabled' => (bool) env('TRON_ENABLED', false),
+        'api_base' => env('TRON_API_BASE'),
+        'api_key' => env('TRON_API_KEY'),
+        'usdt_contract' => env('TRON_USDT_CONTRACT'),
+        'scan_limit' => (int) env('TRON_SCAN_LIMIT', 200),
+        'private_key_signing_enabled' => (bool) env('TRON_PRIVATE_KEY_SIGNING_ENABLED', false),
+        'fee_limit' => (int) env('TRON_FEE_LIMIT', 100000000),
+    ],
+    'eth' => [
+        'enabled' => (bool) env('ETH_ENABLED', false),
+        'rpc_url' => env('ETH_RPC_URL'),
+        'rpc_key' => env('ETH_RPC_KEY'),
+        'usdt_contract' => env('ETH_USDT_CONTRACT'),
+        'scan_window_blocks' => (int) env('ETH_SCAN_WINDOW_BLOCKS', 5000),
+        'node_managed_signing' => (bool) env('ETH_NODE_MANAGED_SIGNING', false),
+        'token_transfer_gas' => (int) env('ETH_TOKEN_TRANSFER_GAS', 120000),
+    ],
+    'bsc' => [
+        'enabled' => (bool) env('BSC_ENABLED', false),
+        'rpc_url' => env('BSC_RPC_URL'),
+        'rpc_key' => env('BSC_RPC_KEY'),
+        'usdt_contract' => env('BSC_USDT_CONTRACT'),
+        'scan_window_blocks' => (int) env('BSC_SCAN_WINDOW_BLOCKS', 5000),
+        'node_managed_signing' => (bool) env('BSC_NODE_MANAGED_SIGNING', false),
+        'token_transfer_gas' => (int) env('BSC_TOKEN_TRANSFER_GAS', 120000),
+    ],
+    'ton' => [
+        'enabled' => (bool) env('TON_ENABLED', false),
+        'api_base' => env('TON_API_BASE'),
+        'api_key' => env('TON_API_KEY'),
+        'usdt_master' => env('TON_USDT_MASTER'),
+        'scan_limit' => (int) env('TON_SCAN_LIMIT', 100),
+        'signer_url' => env('TON_SIGNER_URL'),
+        'signer_token' => env('TON_SIGNER_TOKEN'),
+        'signer_timeout' => (int) env('TON_SIGNER_TIMEOUT', 20),
+    ],
+];

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="264" height="60" viewBox="0 0 264 60" fill="none">
+  <defs>
+    <linearGradient id="cpBlue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#46B8FF"/>
+      <stop offset="100%" stop-color="#0A79FF"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="2" y="4" width="50" height="50" rx="12" fill="#0A1830"/>
+  <rect x="7" y="9" width="40" height="40" rx="10" fill="url(#cpBlue)"/>
+  <path d="M18 24.5C18 20.36 21.36 17 25.5 17H37V24.5H25.5V39.5H37V47H25.5C21.36 47 18 43.64 18 39.5V24.5Z" fill="#FFFFFF"/>
+  <circle cx="41" cy="17" r="4.5" fill="#D8F1FF"/>
+
+  <text x="62" y="38" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="30" font-weight="700" fill="#FFFFFF">CryptoPay</text>
+</svg>

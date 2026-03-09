@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="635" viewBox="0 0 1080 635" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0C2550"/>
+      <stop offset="100%" stop-color="#1B4E9B"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2DB2FF"/>
+      <stop offset="100%" stop-color="#0A75FF"/>
+    </linearGradient>
+  </defs>
+  <rect width="1080" height="635" rx="24" fill="url(#bg)"/>
+  <circle cx="920" cy="120" r="180" fill="#FFFFFF" fill-opacity="0.06"/>
+  <circle cx="180" cy="560" r="240" fill="#FFFFFF" fill-opacity="0.04"/>
+  <rect x="92" y="120" width="520" height="360" rx="20" fill="#FFFFFF" fill-opacity="0.08"/>
+  <rect x="128" y="164" width="420" height="34" rx="8" fill="#FFFFFF" fill-opacity="0.2"/>
+  <rect x="128" y="214" width="350" height="22" rx="8" fill="#FFFFFF" fill-opacity="0.14"/>
+  <rect x="128" y="250" width="380" height="22" rx="8" fill="#FFFFFF" fill-opacity="0.14"/>
+  <rect x="128" y="294" width="210" height="46" rx="12" fill="url(#card)"/>
+  <text x="154" y="324" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#FFFFFF">Create Invoice</text>
+  <rect x="662" y="150" width="326" height="392" rx="22" fill="#0A1830"/>
+  <rect x="690" y="190" width="270" height="42" rx="10" fill="#FFFFFF" fill-opacity="0.12"/>
+  <rect x="690" y="250" width="270" height="74" rx="14" fill="#FFFFFF" fill-opacity="0.08"/>
+  <rect x="690" y="344" width="125" height="35" rx="8" fill="#2DB2FF" fill-opacity="0.9"/>
+  <rect x="835" y="344" width="125" height="35" rx="8" fill="#17D18D" fill-opacity="0.9"/>
+  <rect x="690" y="402" width="270" height="22" rx="8" fill="#FFFFFF" fill-opacity="0.14"/>
+  <rect x="690" y="436" width="220" height="22" rx="8" fill="#FFFFFF" fill-opacity="0.14"/>
+  <text x="102" y="84" font-family="Arial, sans-serif" font-size="38" font-weight="700" fill="#FFFFFF">CryptoPay Checkout and Settlement</text>
+</svg>

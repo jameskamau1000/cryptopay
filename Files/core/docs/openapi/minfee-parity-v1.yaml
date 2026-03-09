@@ -1,0 +1,94 @@
+openapi: 3.0.3
+info:
+  title: CryptoPay API
+  version: "1.0.0"
+  description: |
+    Versioned API for invoice links, payouts, balances, webhooks, and plugins.
+servers:
+  - url: /api/v1
+security:
+  - ApiKeyAuth: []
+paths:
+  /invoices:
+    post:
+      summary: Create invoice link
+      responses:
+        "201":
+          description: Created
+    get:
+      summary: List invoices
+      responses:
+        "200":
+          description: OK
+  /invoices/{id}:
+    get:
+      summary: Get invoice by id or reference
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+  /payouts:
+    post:
+      summary: Create payout
+      responses:
+        "201":
+          description: Created
+  /payouts/{id}:
+    get:
+      summary: Get payout
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+  /payout-batches:
+    post:
+      summary: Create payout batch
+      responses:
+        "201":
+          description: Created
+  /balances:
+    get:
+      summary: Get merchant balances
+      responses:
+        "200":
+          description: OK
+  /webhooks:
+    post:
+      summary: Register webhook endpoint
+      responses:
+        "201":
+          description: Created
+  /webhooks/{id}/rotate-secret:
+    post:
+      summary: Rotate webhook secret
+      responses:
+        "200":
+          description: OK
+  /webhooks/test:
+    post:
+      summary: Trigger test webhook event
+      responses:
+        "200":
+          description: OK
+  /plugins/handshake:
+    post:
+      summary: Verify plugin compatibility
+      responses:
+        "200":
+          description: OK
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY

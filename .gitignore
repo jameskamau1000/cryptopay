@@ -1,0 +1,13 @@
+sparepartsuae.pem
+*.pem
+
+Files/core/.env
+Files/core/vendor/
+Files/core/node_modules/
+Files/core/storage/logs/
+Files/core/storage/framework/cache/
+Files/core/storage/framework/sessions/
+Files/core/storage/framework/views/
+Files/core/bootstrap/cache/*.php
+
+.DS_Store
