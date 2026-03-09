@@ -68,7 +68,68 @@ class TonAdapter extends BaseChainAdapter implements ChainAdapterInterface
     public function findIncomingTransfers(string $address, string $asset, ?int $sinceBlock = null): array
     {
         $this->guardEnabled('ton');
-        $master = (string) config('chains.ton.usdt_master');
+        $base = rtrim((string) config('chains.ton.api_base'), '/');
+        $master = strtolower((string) config('chains.ton.usdt_master'));
+
+        if (str_contains($base, 'tonapi.io')) {
+            $parsed = $this->get('/v2/address/' . urlencode($address) . '/parse', []);
+            $rawAddress = strtolower((string) ($parsed['raw_form'] ?? ''));
+            if (!$rawAddress) {
+                throw new RuntimeException('TON API failed to parse target address');
+            }
+
+            $response = $this->get('/v2/accounts/' . urlencode($address) . '/jettons/history', [
+                'limit' => (int) config('chains.ton.scan_limit', 100),
+            ]);
+            $items = $response['operations'] ?? [];
+            $transfers = [];
+            foreach ($items as $item) {
+                if (($item['operation'] ?? null) !== 'transfer') {
+                    continue;
+                }
+
+                $destination = strtolower((string) ($item['destination']['address'] ?? ''));
+                if ($destination !== $rawAddress) {
+                    continue;
+                }
+
+                $jettonSymbol = strtoupper((string) ($item['jetton']['symbol'] ?? ''));
+                $jettonMaster = strtolower((string) ($item['jetton']['address'] ?? ''));
+                if ($jettonSymbol !== strtoupper($asset) && $jettonSymbol !== 'USDT') {
+                    continue;
+                }
+                if ($master && $jettonMaster && $jettonMaster !== $master) {
+                    continue;
+                }
+
+                $lt = isset($item['lt']) ? (int) $item['lt'] : null;
+                if ($sinceBlock && $lt && $lt < $sinceBlock) {
+                    continue;
+                }
+
+                $decimals = (int) ($item['jetton']['decimals'] ?? 6);
+                $amountRaw = (string) ($item['amount'] ?? '0');
+                $divisor = 10 ** max(min($decimals, 18), 0);
+                $amount = $divisor > 0 ? ((float) $amountRaw) / $divisor : (float) $amountRaw;
+
+                $txHash = (string) ($item['transaction_hash'] ?? '');
+                if (!$txHash) {
+                    continue;
+                }
+
+                $transfers[] = [
+                    'tx_hash' => $txHash,
+                    'amount' => round($amount, 8),
+                    'confirmations' => 1,
+                    'block_number' => $lt,
+                    'to_address' => $address,
+                    'payload' => $item,
+                ];
+            }
+
+            return $transfers;
+        }
+
         if (!$master) {
             throw new RuntimeException('TON USDT master contract must be configured');
         }
@@ -117,7 +178,9 @@ class TonAdapter extends BaseChainAdapter implements ChainAdapterInterface
             throw new RuntimeException('Missing signed_boc for TON payout broadcast');
         }
 
-        $result = $this->post('/api/v2/sendBoc', ['boc' => $signedBoc]);
+        $base = rtrim((string) config('chains.ton.api_base'), '/');
+        $path = str_contains($base, 'tonapi.io') ? '/v2/blockchain/message' : '/api/v2/sendBoc';
+        $result = $this->post($path, ['boc' => $signedBoc]);
         $txHash = (string) ($result['result']['hash'] ?? $result['hash'] ?? $result['result'] ?? '');
         if (!$txHash) {
             $txHash = hash('sha256', $signedBoc);
@@ -172,6 +235,30 @@ class TonAdapter extends BaseChainAdapter implements ChainAdapterInterface
     public function getTransferStatus(string $txHash, array $context = []): ?array
     {
         $this->guardEnabled('ton');
+        $base = rtrim((string) config('chains.ton.api_base'), '/');
+        if (str_contains($base, 'tonapi.io')) {
+            try {
+                $item = $this->get('/v2/blockchain/transactions/' . $txHash, []);
+            } catch (RuntimeException $e) {
+                if (str_contains($e->getMessage(), '404')) {
+                    return null;
+                }
+                throw $e;
+            }
+
+            $status = 'confirmed';
+            if (isset($item['aborted']) && $item['aborted']) {
+                $status = 'failed';
+            }
+
+            return [
+                'confirmations' => 1,
+                'block_number' => isset($item['lt']) ? (int) $item['lt'] : null,
+                'status' => $status,
+                'payload' => (array) $item,
+            ];
+        }
+
         $response = $this->get('/api/v3/transactions', ['hash' => $txHash, 'limit' => 1]);
         $items = $response['transactions'] ?? $response['result'] ?? [];
         if (empty($items)) {

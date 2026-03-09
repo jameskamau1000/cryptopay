@@ -99,7 +99,8 @@ class ChainHealthCheckCommand extends Command
         if (config('chains.ton.api_key')) {
             $http = $http->withHeaders(['X-API-Key' => (string) config('chains.ton.api_key')]);
         }
-        $response = $http->get($base . '/api/v3/masterchainInfo');
+        $path = str_contains($base, 'tonapi.io') ? '/v2/blockchain/masterchain-head' : '/api/v3/masterchainInfo';
+        $response = $http->get($base . $path);
         if (!$response->ok()) {
             throw new \RuntimeException('HTTP ' . $response->status());
         }
