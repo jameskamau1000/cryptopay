@@ -30,6 +30,7 @@ return [
         'usdt_contract' => env('ETH_USDT_CONTRACT'),
         'scan_window_blocks' => (int) env('ETH_SCAN_WINDOW_BLOCKS', 5000),
         'node_managed_signing' => (bool) env('ETH_NODE_MANAGED_SIGNING', false),
+        'account_password' => env('ETH_ACCOUNT_PASSWORD', ''),
         'token_transfer_gas' => (int) env('ETH_TOKEN_TRANSFER_GAS', 120000),
     ],
     'bsc' => [
@@ -39,6 +40,7 @@ return [
         'usdt_contract' => env('BSC_USDT_CONTRACT'),
         'scan_window_blocks' => (int) env('BSC_SCAN_WINDOW_BLOCKS', 5000),
         'node_managed_signing' => (bool) env('BSC_NODE_MANAGED_SIGNING', false),
+        'account_password' => env('BSC_ACCOUNT_PASSWORD', ''),
         'token_transfer_gas' => (int) env('BSC_TOKEN_TRANSFER_GAS', 120000),
     ],
     'ton' => [

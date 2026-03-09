@@ -2,12 +2,17 @@
 
 namespace App\Services\Blockchain\Adapters;
 
+use App\Services\Blockchain\ChainSignerService;
 use App\Services\Blockchain\Contracts\ChainAdapterInterface;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 class TonAdapter extends BaseChainAdapter implements ChainAdapterInterface
 {
+    public function __construct(private ChainSignerService $chainSignerService)
+    {
+    }
+
     public function chain(): string
     {
         return 'ton';
@@ -16,7 +21,48 @@ class TonAdapter extends BaseChainAdapter implements ChainAdapterInterface
     public function generateAddress(array $context = []): array
     {
         $this->guardEnabled('ton');
-        throw new RuntimeException('TON deposit addresses must be pre-generated and loaded as custody/merchant addresses');
+        if (config('chains.signer.enabled')) {
+            $provided = $this->chainSignerService->provisionAddress('ton', (string) ($context['asset'] ?? config('chains.default_asset', 'USDT')), $context);
+            return [
+                'address' => (string) $provided['address'],
+                'memo' => $provided['memo'] ?? null,
+                'private_key' => $provided['private_key'] ?? null,
+            ];
+        }
+
+        $url = (string) config('chains.ton.signer_url');
+        if ($url) {
+            $http = Http::timeout((int) config('chains.ton.signer_timeout', 20))->acceptJson();
+            $token = (string) config('chains.ton.signer_token');
+            if ($token) {
+                $http = $http->withToken($token);
+            }
+
+            $response = $http->post($url, [
+                'action' => 'provision_address',
+                'chain' => 'ton',
+                'asset' => strtoupper((string) ($context['asset'] ?? config('chains.default_asset', 'USDT'))),
+                'context' => $context,
+            ]);
+
+            if (!$response->ok()) {
+                throw new RuntimeException('TON signer HTTP error [' . $response->status() . ']');
+            }
+
+            $json = $response->json() ?: [];
+            $address = $json['address'] ?? null;
+            if (!is_string($address) || $address === '') {
+                throw new RuntimeException('TON signer did not return a wallet address');
+            }
+
+            return [
+                'address' => $address,
+                'memo' => $json['memo'] ?? null,
+                'private_key' => $json['private_key'] ?? null,
+            ];
+        }
+
+        throw new RuntimeException('TON self-custody address provisioning requires signer integration');
     }
 
     public function findIncomingTransfers(string $address, string $asset, ?int $sinceBlock = null): array

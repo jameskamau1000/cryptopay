@@ -122,6 +122,7 @@ class ChainHealthCheckCommand extends Command
         }
 
         $response = $http->post($url, [
+            'action' => 'health_check',
             'health_check' => true,
             'chain' => 'eth',
             'asset' => 'USDT',

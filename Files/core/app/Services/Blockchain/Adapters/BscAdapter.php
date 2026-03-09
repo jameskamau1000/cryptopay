@@ -2,6 +2,7 @@
 
 namespace App\Services\Blockchain\Adapters;
 
+use App\Services\Blockchain\ChainSignerService;
 use App\Services\Blockchain\Contracts\ChainAdapterInterface;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -11,6 +12,10 @@ class BscAdapter extends BaseChainAdapter implements ChainAdapterInterface
 {
     private const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 
+    public function __construct(private ChainSignerService $chainSignerService)
+    {
+    }
+
     public function chain(): string
     {
         return 'bsc';
@@ -19,7 +24,25 @@ class BscAdapter extends BaseChainAdapter implements ChainAdapterInterface
     public function generateAddress(array $context = []): array
     {
         $this->guardEnabled('bsc');
-        return ['address' => '0x' . substr(hash('sha256', uniqid('bsc', true)), 0, 40), 'memo' => null];
+
+        if (config('chains.signer.enabled')) {
+            $provided = $this->chainSignerService->provisionAddress('bsc', (string) ($context['asset'] ?? config('chains.default_asset', 'USDT')), $context);
+            return [
+                'address' => $this->normalizeHexAddress((string) $provided['address']),
+                'memo' => $provided['memo'] ?? null,
+                'private_key' => $provided['private_key'] ?? null,
+            ];
+        }
+
+        if ((bool) config('chains.bsc.node_managed_signing', false)) {
+            $newAddress = $this->rpc('personal_newAccount', [(string) config('chains.bsc.account_password', '')]);
+            if (is_string($newAddress) && $newAddress !== '') {
+                return ['address' => $this->normalizeHexAddress($newAddress), 'memo' => null];
+            }
+            throw new RuntimeException('BSC node-managed account creation failed');
+        }
+
+        throw new RuntimeException('BSC self-custody address provisioning requires unified signer or node-managed account API');
     }
 
     public function findIncomingTransfers(string $address, string $asset, ?int $sinceBlock = null): array

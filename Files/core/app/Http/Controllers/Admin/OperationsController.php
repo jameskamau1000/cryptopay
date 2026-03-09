@@ -15,6 +15,7 @@ use App\Models\RiskCase;
 use App\Models\WebhookDelivery;
 use App\Models\WebhookEndpoint;
 use App\Jobs\SendWebhookDeliveryJob;
+use App\Services\Blockchain\ChainManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
@@ -22,6 +23,10 @@ use Illuminate\Support\Str;
 
 class OperationsController extends Controller
 {
+    public function __construct(private ChainManager $chainManager)
+    {
+    }
+
     public function invoices()
     {
         $pageTitle = 'CryptoPay Operations - Invoices';
@@ -93,24 +98,46 @@ class OperationsController extends Controller
         $request->validate([
             'chain' => 'required|in:tron,eth,bsc,bep20,ton',
             'asset' => 'required|string|max:20',
-            'address' => 'required|string|max:255|unique:custody_wallets,address',
+            'address' => 'required_unless:auto_generate,1|string|max:255|unique:custody_wallets,address',
             'label' => 'nullable|string|max:255',
             'private_key' => 'nullable|string|max:5000',
             'is_treasury' => 'nullable|boolean',
             'is_active' => 'nullable|boolean',
+            'auto_generate' => 'nullable|boolean',
         ]);
 
+        $chain = strtolower($request->chain) === 'bep20' ? 'bsc' : strtolower($request->chain);
+        $asset = strtoupper($request->asset);
+
+        $address = $request->address;
+        $privateKey = $request->private_key;
+        if ($request->boolean('auto_generate')) {
+            $generated = $this->chainManager->for($chain)->generateAddress([
+                'purpose' => 'treasury_wallet',
+                'asset' => $asset,
+                'label' => $request->label,
+                'operator_id' => auth('admin')->id(),
+            ]);
+
+            $address = $generated['address'] ?? null;
+            $privateKey = $generated['private_key'] ?? $privateKey;
+            if (!$address) {
+                $notify[] = ['error', 'Wallet auto-provisioning failed for ' . strtoupper($chain)];
+                return back()->withNotify($notify);
+            }
+        }
+
         CustodyWallet::create([
-            'chain' => strtolower($request->chain) === 'bep20' ? 'bsc' : strtolower($request->chain),
-            'asset' => strtoupper($request->asset),
-            'address' => $request->address,
+            'chain' => $chain,
+            'asset' => $asset,
+            'address' => $address,
             'label' => $request->label,
-            'encrypted_private_key' => $request->filled('private_key') ? Crypt::encryptString($request->private_key) : null,
+            'encrypted_private_key' => $privateKey ? Crypt::encryptString($privateKey) : null,
             'is_treasury' => $request->boolean('is_treasury'),
             'is_active' => $request->boolean('is_active', true),
         ]);
 
-        $notify[] = ['success', 'Wallet added successfully'];
+        $notify[] = ['success', $request->boolean('auto_generate') ? 'Wallet generated and added successfully' : 'Wallet added successfully'];
         return back()->withNotify($notify);
     }
 

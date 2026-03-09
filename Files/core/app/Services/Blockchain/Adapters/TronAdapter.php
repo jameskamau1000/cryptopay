@@ -2,12 +2,17 @@
 
 namespace App\Services\Blockchain\Adapters;
 
+use App\Services\Blockchain\ChainSignerService;
 use App\Services\Blockchain\Contracts\ChainAdapterInterface;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 class TronAdapter extends BaseChainAdapter implements ChainAdapterInterface
 {
+    public function __construct(private ChainSignerService $chainSignerService)
+    {
+    }
+
     public function chain(): string
     {
         return 'tron';
@@ -16,13 +21,27 @@ class TronAdapter extends BaseChainAdapter implements ChainAdapterInterface
     public function generateAddress(array $context = []): array
     {
         $this->guardEnabled('tron');
+
+        if (config('chains.signer.enabled')) {
+            $provided = $this->chainSignerService->provisionAddress('tron', (string) ($context['asset'] ?? config('chains.default_asset', 'USDT')), $context);
+            return [
+                'address' => (string) $provided['address'],
+                'memo' => $provided['memo'] ?? null,
+                'private_key' => $provided['private_key'] ?? null,
+            ];
+        }
+
         $response = $this->post('/wallet/generateaddress', []);
         $address = $response['base58checkAddress'] ?? ($response['address']['base58'] ?? null);
         if (!$address) {
             throw new RuntimeException('TRON address generation failed');
         }
 
-        return ['address' => $address, 'memo' => null];
+        return [
+            'address' => $address,
+            'memo' => null,
+            'private_key' => $response['privateKey'] ?? ($response['private_key'] ?? null),
+        ];
     }
 
     public function findIncomingTransfers(string $address, string $asset, ?int $sinceBlock = null): array

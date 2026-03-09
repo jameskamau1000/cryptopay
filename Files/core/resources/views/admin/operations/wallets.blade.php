@@ -23,7 +23,7 @@
                     <input type="text" name="label" class="form-control" placeholder="@lang('Label')">
                 </div>
                 <div class="col-md-3">
-                    <input type="text" name="address" class="form-control" placeholder="@lang('Wallet address')" required>
+                    <input type="text" name="address" class="form-control" placeholder="@lang('Wallet address (manual mode)')">
                 </div>
                 <div class="col-md-2">
                     <input type="password" name="private_key" class="form-control" placeholder="@lang('Private key (optional)')">
@@ -32,6 +32,10 @@
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" name="is_treasury" value="1" checked id="is_treasury">
                         <label class="form-check-label" for="is_treasury">@lang('Treasury')</label>
+                    </div>
+                    <div class="form-check mt-1">
+                        <input class="form-check-input" type="checkbox" name="auto_generate" value="1" id="auto_generate">
+                        <label class="form-check-label" for="auto_generate">@lang('Auto-generate self-custody')</label>
                     </div>
                     <button type="submit" class="btn btn--primary btn--sm mt-1 w-100">@lang('Add')</button>
                 </div>
