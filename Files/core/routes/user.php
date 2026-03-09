@@ -99,6 +99,18 @@ Route::middleware('auth')->name('user.')->group(function () {
                 Route::get('webhook-logs', 'webhookLogs')->name('webhook.logs');
             });
 
+            Route::controller('MerchantPortalController')->name('merchant.')->group(function () {
+                Route::get('accounts', 'accounts')->name('accounts');
+                Route::get('payment-links', 'paymentLinks')->name('payment.links');
+                Route::post('payment-links', 'createPaymentLink')->name('payment.links.store');
+                Route::get('channels', 'channels')->name('channels');
+                Route::post('channels', 'createChannel')->name('channels.store');
+                Route::get('mass-payouts', 'massPayouts')->name('mass.payouts');
+                Route::post('mass-payouts/upload', 'uploadMassPayoutCsv')->name('mass.payouts.upload');
+                Route::get('reports', 'reports')->name('reports');
+                Route::get('integration', 'integration')->name('integration');
+            });
+
             // Withdraw
             Route::controller('WithdrawController')->group(function(){
                 Route::middleware('kyc')->group(function(){ 

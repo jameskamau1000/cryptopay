@@ -13,38 +13,66 @@
                 </a>
             </li>
 
-            <li class="sidebar-menu__item {{ menuActive('user.deposit.history') }}">
+            <li class="sidebar-menu__item {{ menuActive('user.transactions') }}">
+                <a href="{{ route('user.transactions') }}" class="sidebar-menu__link">
+                    <i class="las la-exchange-alt"></i>
+                    @lang('Transactions')
+                </a>
+            </li>
+
+            <li class="sidebar-menu__item {{ menuActive('user.merchant.accounts') }}">
+                <a href="{{ route('user.merchant.accounts') }}" class="sidebar-menu__link">
+                    <i class="las la-wallet"></i>
+                    @lang('Accounts')
+                </a>
+            </li>
+
+            <li class="sidebar-menu__item {{ menuActive('user.merchant.mass.payouts') }}">
+                <a href="{{ route('user.merchant.mass.payouts') }}" class="sidebar-menu__link">
+                    <i class="las la-users"></i>
+                    @lang('Mass Payouts')
+                </a>
+            </li>
+
+            <li class="sidebar-menu__item {{ menuActive('user.merchant.payment.links') }}">
+                <a href="{{ route('user.merchant.payment.links') }}" class="sidebar-menu__link">
+                    <i class="las la-link"></i>
+                    @lang('Payment Links')
+                </a>
+            </li>
+
+            <li class="sidebar-menu__item {{ menuActive('user.merchant.channels') }}">
+                <a href="{{ route('user.merchant.channels') }}" class="sidebar-menu__link">
+                    <i class="las la-qrcode"></i>
+                    @lang('Channels')
+                </a>
+            </li>
+
+            <li class="sidebar-menu__item {{ menuActive('user.merchant.reports') }}">
+                <a href="{{ route('user.merchant.reports') }}" class="sidebar-menu__link">
+                    <i class="las la-chart-bar"></i>
+                    @lang('Reports')
+                </a>
+            </li>
+
+            <li class="sidebar-menu__item {{ menuActive('user.merchant.integration') }}">
+                <a href="{{ route('user.merchant.integration') }}" class="sidebar-menu__link">
+                    <i class="las la-code"></i>
+                    @lang('Integration')
+                </a>
+            </li>
+
+            <li class="sidebar-menu__item {{ menuActive(['user.deposit.history']) }}">
                 <a href="{{ route('user.deposit.history') }}" class="sidebar-menu__link">
                     <i class="las la-history"></i>
                     @lang('Payment History')
                 </a>
             </li>
 
-            <li class="sidebar-menu__item {{ menuActive(['user.gateway.methods']) }}">
-                <a href="{{ route('user.gateway.methods') }}" class="sidebar-menu__link">
-                    <i class="las la-credit-card"></i>
-                    @lang('Gateway Methods')
-                </a>
-            </li>
-
-            <li class="sidebar-menu__item {{ menuActive('user.calculate.charge') }}">
-                <a href="{{ route('user.calculate.charge') }}" class="sidebar-menu__link">
-                    <i class="las la-calculator"></i>
-                    @lang('Calculate Charge')
-                </a>
-            </li> 
-
             <li class="sidebar-menu__item {{ menuActive(['user.withdraws', 'user.withdraw.method']) }}">
                 <a href="{{ route('user.withdraws') }}" class="sidebar-menu__link">
                     <i class="las la-money-bill-wave-alt"></i>
                     @lang('Withdraws')
-                </a>
-            </li>
-
-            <li class="sidebar-menu__item {{ menuActive('user.transactions') }}">
-                <a href="{{ route('user.transactions') }}" class="sidebar-menu__link">
-                    <i class="las la-exchange-alt"></i>
-                    @lang('Transactions')
                 </a>
             </li>
 
