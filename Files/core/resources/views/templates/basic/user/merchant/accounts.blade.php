@@ -12,6 +12,11 @@
                 <div class="card-body">
                     <h6 class="mb-1">@lang('Total Net Balance')</h6>
                     <h3 class="mb-0">{{ showAmount($totalNet, 8, true, false, false) }}</h3>
+                    <div class="mt-3 d-flex flex-wrap gap-2">
+                        <a href="{{ route('user.merchant.channels') }}" class="btn btn-outline--base btn--sm">@lang('Receive (Channels)')</a>
+                        <a href="{{ route('user.withdraws') }}" class="btn btn-outline--base btn--sm">@lang('Send (Payouts)')</a>
+                        <a href="{{ route('user.merchant.transactions') }}" class="btn btn-outline--base btn--sm">@lang('View Transactions')</a>
+                    </div>
                 </div>
             </div>
         </div>

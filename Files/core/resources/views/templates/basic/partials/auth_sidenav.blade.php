@@ -13,8 +13,8 @@
                 </a>
             </li>
 
-            <li class="sidebar-menu__item {{ menuActive('user.transactions') }}">
-                <a href="{{ route('user.transactions') }}" class="sidebar-menu__link">
+            <li class="sidebar-menu__item {{ menuActive('user.merchant.transactions') }}">
+                <a href="{{ route('user.merchant.transactions') }}" class="sidebar-menu__link">
                     <i class="las la-exchange-alt"></i>
                     @lang('Transactions')
                 </a>

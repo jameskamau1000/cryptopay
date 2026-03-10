@@ -16,11 +16,14 @@ use App\Models\WebhookDelivery;
 use App\Services\Blockchain\ChainManager;
 use App\Services\Invoice\InvoiceService;
 use App\Services\Payout\PayoutService;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
 class MerchantPortalController extends Controller
 {
+    private const MASS_PAYOUT_PREVIEW_SESSION_KEY = 'merchant.mass_payout.preview';
+
     public function __construct(
         private PayoutService $payoutService,
         private InvoiceService $invoiceService,
@@ -68,6 +71,154 @@ class MerchantPortalController extends Controller
         $totalNet = $accounts->sum('net');
 
         return view(activeTemplate() . 'user.merchant.accounts', compact('pageTitle', 'accounts', 'totalNet'));
+    }
+
+    public function transactions(Request $request)
+    {
+        $pageTitle = 'Transactions';
+        $userId = auth()->id();
+        $search = trim((string) $request->get('search', ''));
+        $source = (string) $request->get('source', '');
+        $status = (string) $request->get('status', '');
+        $chain = strtolower((string) $request->get('chain', ''));
+        $date = (string) $request->get('date', '');
+
+        $dateStart = null;
+        $dateEnd = null;
+        if ($date && str_contains($date, ' - ')) {
+            [$from, $to] = explode(' - ', $date, 2);
+            try {
+                $dateStart = date('Y-m-d 00:00:00', strtotime(trim($from)));
+                $dateEnd = date('Y-m-d 23:59:59', strtotime(trim($to)));
+            } catch (\Throwable) {
+                $dateStart = null;
+                $dateEnd = null;
+            }
+        }
+
+        $rows = collect();
+
+        if (!$source || $source === 'deposit') {
+            $depositQuery = OnchainDeposit::where('user_id', $userId);
+            if ($chain) {
+                $depositQuery->where('chain', $chain);
+            }
+            if ($status) {
+                $depositQuery->where('status', $status);
+            }
+            if ($search !== '') {
+                $depositQuery->where(function ($q) use ($search) {
+                    $q->where('tx_hash', 'like', '%' . $search . '%')
+                        ->orWhere('address', 'like', '%' . $search . '%');
+                });
+            }
+            if ($dateStart && $dateEnd) {
+                $depositQuery->whereBetween('created_at', [$dateStart, $dateEnd]);
+            }
+            $rows = $rows->merge(
+                $depositQuery->latest()->limit(500)->get()->map(function (OnchainDeposit $item) {
+                    return [
+                        'source' => 'deposit',
+                        'reference' => $item->tx_hash,
+                        'chain' => strtoupper($item->chain),
+                        'asset' => strtoupper($item->asset),
+                        'amount' => (float) $item->amount,
+                        'status' => $item->status,
+                        'address' => $item->address,
+                        'counterparty' => $item->address,
+                        'created_at' => $item->created_at,
+                    ];
+                })
+            );
+        }
+
+        if (!$source || $source === 'payout') {
+            $payoutQuery = Payout::where('user_id', $userId);
+            if ($status) {
+                $payoutQuery->where('status', $status);
+            }
+            if ($chain) {
+                $payoutQuery->where(function ($q) use ($chain) {
+                    $q->where('network', $chain)
+                        ->orWhereJsonContains('metadata->chain', $chain);
+                });
+            }
+            if ($search !== '') {
+                $payoutQuery->where(function ($q) use ($search) {
+                    $q->where('reference', 'like', '%' . $search . '%')
+                        ->orWhere('destination', 'like', '%' . $search . '%');
+                });
+            }
+            if ($dateStart && $dateEnd) {
+                $payoutQuery->whereBetween('created_at', [$dateStart, $dateEnd]);
+            }
+            $rows = $rows->merge(
+                $payoutQuery->latest()->limit(500)->get()->map(function (Payout $item) {
+                    $chain = strtolower((string) ($item->network ?: ($item->metadata['chain'] ?? '')));
+                    return [
+                        'source' => 'payout',
+                        'reference' => $item->reference,
+                        'chain' => strtoupper($chain ?: '-'),
+                        'asset' => strtoupper($item->asset),
+                        'amount' => -(float) $item->amount,
+                        'status' => $item->status,
+                        'address' => $item->destination,
+                        'counterparty' => $item->destination,
+                        'created_at' => $item->created_at,
+                    ];
+                })
+            );
+        }
+
+        if (!$source || $source === 'invoice') {
+            $invoiceQuery = Invoice::where('user_id', $userId)->with('depositAddress');
+            if ($status) {
+                $invoiceQuery->where('status', $status);
+            }
+            if ($chain) {
+                $invoiceQuery->whereHas('depositAddress', function ($q) use ($chain) {
+                    $q->where('chain', $chain);
+                });
+            }
+            if ($search !== '') {
+                $invoiceQuery->where(function ($q) use ($search) {
+                    $q->where('reference', 'like', '%' . $search . '%')
+                        ->orWhere('external_reference', 'like', '%' . $search . '%');
+                });
+            }
+            if ($dateStart && $dateEnd) {
+                $invoiceQuery->whereBetween('created_at', [$dateStart, $dateEnd]);
+            }
+            $rows = $rows->merge(
+                $invoiceQuery->latest()->limit(500)->get()->map(function (Invoice $item) {
+                    return [
+                        'source' => 'invoice',
+                        'reference' => $item->reference,
+                        'chain' => strtoupper((string) ($item->depositAddress->chain ?? '-')),
+                        'asset' => strtoupper((string) ($item->depositAddress->asset ?? $item->settlement_currency ?? 'USDT')),
+                        'amount' => (float) $item->amount,
+                        'status' => $item->status,
+                        'address' => $item->depositAddress->address ?? '-',
+                        'counterparty' => $item->depositAddress->address ?? '-',
+                        'created_at' => $item->created_at,
+                    ];
+                })
+            );
+        }
+
+        $rows = $rows->sortByDesc('created_at')->values();
+        $perPage = (int) getPaginate();
+        $currentPage = max((int) $request->get('page', 1), 1);
+        $pageItems = $rows->forPage($currentPage, $perPage)->values();
+        $transactions = new LengthAwarePaginator(
+            $pageItems,
+            $rows->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return view(activeTemplate() . 'user.merchant.transactions', compact('pageTitle', 'transactions'));
     }
 
     public function paymentLinks(Request $request)
@@ -202,8 +353,13 @@ class MerchantPortalController extends Controller
             ->withCount('items')
             ->latest()
             ->paginate(getPaginate());
+        $preview = session(self::MASS_PAYOUT_PREVIEW_SESSION_KEY, []);
+        $previewSummary = [
+            'total' => count($preview),
+            'total_amount' => collect($preview)->sum('amount'),
+        ];
 
-        return view(activeTemplate() . 'user.merchant.mass_payouts', compact('pageTitle', 'batches'));
+        return view(activeTemplate() . 'user.merchant.mass_payouts', compact('pageTitle', 'batches', 'preview', 'previewSummary'));
     }
 
     public function uploadMassPayoutCsv(Request $request)
@@ -272,12 +428,36 @@ class MerchantPortalController extends Controller
             return back()->withNotify($notify);
         }
 
+        session([
+            self::MASS_PAYOUT_PREVIEW_SESSION_KEY => $items,
+        ]);
+
+        $notify[] = ['success', count($items) . ' payout rows loaded. Review and confirm to send.'];
+        return back()->withNotify($notify);
+    }
+
+    public function confirmMassPayoutCsv()
+    {
+        $items = session(self::MASS_PAYOUT_PREVIEW_SESSION_KEY, []);
+        if (empty($items)) {
+            $notify[] = ['error', 'No payout preview found. Upload CSV again.'];
+            return back()->withNotify($notify);
+        }
+
         $batch = $this->payoutService->createBatch(auth()->user(), [
             'source' => 'csv',
             'items' => $items,
         ]);
 
+        session()->forget(self::MASS_PAYOUT_PREVIEW_SESSION_KEY);
         $notify[] = ['success', 'Mass payout batch created: ' . $batch->reference];
+        return back()->withNotify($notify);
+    }
+
+    public function cancelMassPayoutPreview()
+    {
+        session()->forget(self::MASS_PAYOUT_PREVIEW_SESSION_KEY);
+        $notify[] = ['success', 'Mass payout preview cleared'];
         return back()->withNotify($notify);
     }
 

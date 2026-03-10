@@ -40,6 +40,54 @@
             </div>
         </div>
 
+        @if(!empty($preview))
+            <div class="col-12">
+                <div class="card custom--card border-warning">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">@lang('Review Batch Before Sending')</h6>
+                        <div class="small text-muted">
+                            @lang('Rows'): {{ $previewSummary['total'] }} |
+                            @lang('Total'): {{ showAmount($previewSummary['total_amount'], 8, true, false, false) }}
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table--responsive--md">
+                                <thead>
+                                    <tr>
+                                        <th>@lang('Destination')</th>
+                                        <th>@lang('Amount')</th>
+                                        <th>@lang('Asset')</th>
+                                        <th>@lang('Chain')</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($preview as $row)
+                                        <tr>
+                                            <td class="text-break">{{ $row['destination'] }}</td>
+                                            <td>{{ showAmount($row['amount'], 8, true, false, false) }}</td>
+                                            <td>{{ strtoupper($row['asset']) }}</td>
+                                            <td>{{ strtoupper($row['chain']) }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card-footer d-flex gap-2 justify-content-end">
+                        <form method="POST" action="{{ route('user.merchant.mass.payouts.cancel') }}">
+                            @csrf
+                            <button type="submit" class="btn btn--warning">@lang('Cancel')</button>
+                        </form>
+                        <form method="POST" action="{{ route('user.merchant.mass.payouts.confirm') }}">
+                            @csrf
+                            <button type="submit" class="btn btn--base">@lang('Confirm & Create Batch')</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div class="col-12">
             <div class="card custom--card">
                 <div class="card-header">
