@@ -3,6 +3,37 @@
 @section('panel')
     <div class="card b-radius--10 mb-3">
         <div class="card-header">
+            <h5 class="mb-0">@lang('Wallet Backup & Recovery')</h5>
+        </div>
+        <div class="card-body">
+            <p class="mb-2">
+                @lang('Enter a passphrase to download an encrypted ZIP backup or preview unencrypted wallet data.')
+            </p>
+
+            <form class="row g-2" method="POST" action="{{ route('admin.operations.wallets.backup.download') }}">
+                @csrf
+                <div class="col-md-6">
+                    <input type="password" name="passphrase" class="form-control" placeholder="@lang('Backup passphrase')" required>
+                </div>
+                <div class="col-md-3 d-grid">
+                    <button type="submit" class="btn btn--primary">@lang('Download Encrypted Backup')</button>
+                </div>
+            </form>
+
+            <form class="row g-2 mt-1" method="POST" action="{{ route('admin.operations.wallets.backup.preview') }}">
+                @csrf
+                <div class="col-md-6">
+                    <input type="password" name="passphrase" class="form-control" placeholder="@lang('Passphrase to unlock preview')" required>
+                </div>
+                <div class="col-md-3 d-grid">
+                    <button type="submit" class="btn btn--warning">@lang('View Unencrypted Data')</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card b-radius--10 mb-3">
+        <div class="card-header">
             <h5 class="mb-0">@lang('Generate New Self-Custody Wallet')</h5>
         </div>
         <div class="card-body">

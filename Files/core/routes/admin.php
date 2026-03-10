@@ -171,6 +171,8 @@ Route::middleware(['admin', 'admin.ip.allowlist'])->group(function () {
         Route::get('wallets', 'wallets')->name('wallets');
         Route::post('wallets', 'walletStore')->name('wallets.store');
         Route::post('wallets/generate', 'walletGenerate')->name('wallets.generate');
+        Route::post('wallets/backup/download', 'walletBackupDownload')->name('wallets.backup.download');
+        Route::post('wallets/backup/preview', 'walletBackupPreview')->name('wallets.backup.preview');
         Route::post('wallets/{id}/status', 'walletStatus')->name('wallets.status');
         Route::post('wallets/{id}/vault', 'walletVaultUpdate')->name('wallets.vault.update');
         Route::post('wallets/{id}/vault/clear', 'walletVaultClear')->name('wallets.vault.clear');

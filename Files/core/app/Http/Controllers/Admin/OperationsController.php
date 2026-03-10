@@ -20,6 +20,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
+use ZipArchive;
 
 class OperationsController extends Controller
 {
@@ -219,6 +220,101 @@ class OperationsController extends Controller
 
         $notify[] = ['success', 'Wallet vault key cleared'];
         return back()->withNotify($notify);
+    }
+
+    public function walletBackupDownload(Request $request)
+    {
+        $request->validate([
+            'passphrase' => 'required|string|min:8|max:200',
+        ]);
+
+        if (!class_exists(ZipArchive::class)) {
+            $notify[] = ['error', 'ZIP extension is not available on the server'];
+            return back()->withNotify($notify);
+        }
+
+        $passphrase = (string) $request->passphrase;
+        $payload = $this->walletBackupPayload();
+        $payloadJson = json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        if ($payloadJson === false) {
+            $notify[] = ['error', 'Failed to prepare wallet backup payload'];
+            return back()->withNotify($notify);
+        }
+
+        $timestamp = now()->format('Ymd-His');
+        $downloadName = 'cryptopay-wallet-backup-' . $timestamp . '.zip';
+        $tempPath = storage_path('app/' . $downloadName);
+
+        $zip = new ZipArchive();
+        $open = $zip->open($tempPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+        if ($open !== true) {
+            $notify[] = ['error', 'Failed to create encrypted backup archive'];
+            return back()->withNotify($notify);
+        }
+
+        $zip->setPassword($passphrase);
+        $zip->addFromString('wallet-data.json', $payloadJson);
+        $zip->addFromString('README.txt', "CryptoPay wallet backup\nThis archive is passphrase-protected.\nGenerated: " . now()->toDateTimeString() . "\n");
+
+        if (method_exists($zip, 'setEncryptionName')) {
+            $zip->setEncryptionName('wallet-data.json', ZipArchive::EM_AES_256);
+            $zip->setEncryptionName('README.txt', ZipArchive::EM_AES_256);
+        }
+
+        $zip->close();
+
+        return response()->download($tempPath, $downloadName)->deleteFileAfterSend(true);
+    }
+
+    public function walletBackupPreview(Request $request)
+    {
+        $request->validate([
+            'passphrase' => 'required|string|min:8|max:200',
+        ]);
+
+        $pageTitle = 'CryptoPay Operations - Wallet Backup Preview';
+        $payload = $this->walletBackupPayload();
+        $wallets = collect($payload['wallets'] ?? []);
+
+        return view('admin.operations.wallet_backup_preview', compact('pageTitle', 'wallets'));
+    }
+
+    private function walletBackupPayload(): array
+    {
+        $wallets = CustodyWallet::orderBy('id')
+            ->get()
+            ->map(function (CustodyWallet $wallet) {
+                $privateKey = null;
+                if ($wallet->encrypted_private_key) {
+                    try {
+                        $privateKey = Crypt::decryptString($wallet->encrypted_private_key);
+                    } catch (\Throwable) {
+                        $privateKey = null;
+                    }
+                }
+
+                return [
+                    'id' => $wallet->id,
+                    'chain' => $wallet->chain,
+                    'asset' => $wallet->asset,
+                    'label' => $wallet->label,
+                    'address' => $wallet->address,
+                    'is_active' => (bool) $wallet->is_active,
+                    'is_treasury' => (bool) $wallet->is_treasury,
+                    'private_key' => $privateKey,
+                    'created_at' => optional($wallet->created_at)->toDateTimeString(),
+                    'updated_at' => optional($wallet->updated_at)->toDateTimeString(),
+                ];
+            })
+            ->values()
+            ->all();
+
+        return [
+            'generated_at' => now()->toDateTimeString(),
+            'site_name' => (string) gs('site_name'),
+            'wallet_count' => count($wallets),
+            'wallets' => $wallets,
+        ];
     }
 
     public function depositAddresses()
