@@ -141,6 +141,52 @@ class OperationsController extends Controller
         return back()->withNotify($notify);
     }
 
+    public function walletGenerate(Request $request)
+    {
+        $request->validate([
+            'chain' => 'required|in:tron,eth,bsc,bep20,ton',
+            'asset' => 'required|string|max:20',
+            'label' => 'nullable|string|max:255',
+            'is_treasury' => 'nullable|boolean',
+            'is_active' => 'nullable|boolean',
+        ]);
+
+        $chain = strtolower($request->chain) === 'bep20' ? 'bsc' : strtolower($request->chain);
+        $asset = strtoupper($request->asset);
+
+        $generated = $this->chainManager->for($chain)->generateAddress([
+            'purpose' => 'treasury_wallet',
+            'asset' => $asset,
+            'label' => $request->label,
+            'operator_id' => auth('admin')->id(),
+        ]);
+
+        $address = $generated['address'] ?? null;
+        if (!$address) {
+            $notify[] = ['error', 'Wallet auto-provisioning failed for ' . strtoupper($chain)];
+            return back()->withNotify($notify);
+        }
+
+        if (CustodyWallet::where('address', $address)->exists()) {
+            $notify[] = ['error', 'Generated address already exists. Please try again.'];
+            return back()->withNotify($notify);
+        }
+
+        $privateKey = $generated['private_key'] ?? null;
+        CustodyWallet::create([
+            'chain' => $chain,
+            'asset' => $asset,
+            'address' => $address,
+            'label' => $request->label ?: (strtoupper($chain) . ' Treasury'),
+            'encrypted_private_key' => $privateKey ? Crypt::encryptString($privateKey) : null,
+            'is_treasury' => $request->boolean('is_treasury', true),
+            'is_active' => $request->boolean('is_active', true),
+        ]);
+
+        $notify[] = ['success', 'New self-custody wallet generated successfully'];
+        return back()->withNotify($notify);
+    }
+
     public function walletStatus(int $id)
     {
         $wallet = CustodyWallet::findOrFail($id);

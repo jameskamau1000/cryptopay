@@ -3,6 +3,44 @@
 @section('panel')
     <div class="card b-radius--10 mb-3">
         <div class="card-header">
+            <h5 class="mb-0">@lang('Generate New Self-Custody Wallet')</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ route('admin.operations.wallets.generate') }}" class="row g-2">
+                @csrf
+                <div class="col-md-2">
+                    <select name="chain" class="form-control" required>
+                        <option value="tron">TRON</option>
+                        <option value="eth">ETH</option>
+                        <option value="bsc">BEP20 (BSC)</option>
+                        <option value="ton">TON</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="text" name="asset" class="form-control" value="USDT" required>
+                </div>
+                <div class="col-md-4">
+                    <input type="text" name="label" class="form-control" placeholder="@lang('Label (e.g. ETH Treasury #2)')">
+                </div>
+                <div class="col-md-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="is_treasury" value="1" checked id="gen_is_treasury">
+                        <label class="form-check-label" for="gen_is_treasury">@lang('Treasury')</label>
+                    </div>
+                    <div class="form-check mt-1">
+                        <input class="form-check-input" type="checkbox" name="is_active" value="1" checked id="gen_is_active">
+                        <label class="form-check-label" for="gen_is_active">@lang('Active')</label>
+                    </div>
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button type="submit" class="btn btn--success">@lang('Generate Wallet')</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card b-radius--10 mb-3">
+        <div class="card-header">
             <h5 class="mb-0">@lang('Add Treasury Wallet')</h5>
         </div>
         <div class="card-body">
